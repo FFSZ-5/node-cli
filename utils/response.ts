@@ -1,17 +1,17 @@
-export const responseFormatter = (req, res, next) => {
-  res.sendResponse = (data) => {
+export const responseFormatter = (req: any, res: any, next: any) => {
+  res.sendResponse = (data: any) => {
     // 格式化响应数据
     let responseData = {
       success: true,
       data: data,
+      message: "",
     };
     // 如果data是Error类型，则认为是失败的响应
     if (data instanceof Error) {
       responseData = {
         success: false,
-        error: {
-          message: data?.message,
-        },
+        data: null,
+        message: data?.message,
       };
     }
     res.send(responseData);
