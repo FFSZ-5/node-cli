@@ -4,6 +4,7 @@ import {
   privateDecrypt,
 } from "../utils/encode";
 
+import { TOKEN_TIME } from "../config";
 import db from "../db/index";
 import jwt from "jsonwebtoken";
 
@@ -22,12 +23,14 @@ export const login = async (req: any, res: any, next: any) => {
         // 私钥
         secret,
         // 设置过期时间
-        { expiresIn: 10, algorithm: "RS256" }
+        { expiresIn: TOKEN_TIME, algorithm: "RS256" }
       );
       res.sendResponse({
         message: "登录成功",
         data: { token },
       });
+      await res.redis.set(email, token);
+      await res.redis.expire(email, TOKEN_TIME);
     } else {
       res.sendResponse({
         message: "用户名或者密码错误",
@@ -48,19 +51,11 @@ export const getPublicKey = (req: any, res: any) => {
   res.sendResponse({ data: { pub_key } });
 };
 //登出
-export const logout = (req: any, res: any) => {
-  let { email } = req.body;
-
-  // 登录成功，签发一个token并返回给前端
-  const token = jwt.sign(
-    // payload：签发的 token 里面要包含的一些数据
-    { email },
-    // 私钥
-    "lfsz",
-    // 设置过期时间
-    { expiresIn: 0 } //1 day
-  );
-
+export const logout = async (req: any, res: any) => {
+  let { email } = req?.auth;
+  if (await res.redis.get(email)) {
+    await res.redis.del(email);
+  }
   res.sendResponse({
     message: "登出成功",
   });
